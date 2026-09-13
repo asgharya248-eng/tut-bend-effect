@@ -100,6 +100,43 @@
   footer{border-top:1px solid var(--stroke);padding:24px 0 34px;color:var(--dim);font-size:13px;background:rgba(6,13,7,.72)}
   footer .fbar{max-width:1280px;margin:0 auto;padding:0 28px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
+  button.btn{border:0;cursor:pointer;font-family:inherit}
+  .modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px}
+  .modal.open{display:flex}
+  .modal-back{position:absolute;inset:0;background:rgba(3,7,4,.78);backdrop-filter:blur(6px)}
+  .modal-card{
+    position:relative;width:min(520px,100%);
+    background:linear-gradient(180deg,#0e1d10,#0a150b);
+    border:1px solid var(--stroke);border-radius:22px;
+    padding:34px 30px 28px;
+    box-shadow:0 40px 120px -30px rgba(0,0,0,.9),0 0 90px -30px rgba(140,210,80,.3);
+    animation:pop .25s ease;
+  }
+  @keyframes pop{from{transform:translateY(14px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+  .modal-card h3{font-size:22px;font-weight:900;letter-spacing:-.4px}
+  .modal-card .m-lead{color:var(--dim);font-size:14px;line-height:1.7;margin:8px 0 22px}
+  .x-btn{position:absolute;top:14px;right:16px;background:none;border:0;color:var(--dim);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px}
+  .x-btn:hover{color:var(--text)}
+  .f-card{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:14px 16px;margin-bottom:12px;border-radius:14px;border:1px solid var(--stroke);background:rgba(255,255,255,.03);cursor:pointer;transition:border-color .15s}
+  .f-card:hover{border-color:rgba(168,224,99,.45)}
+  .f-card:disabled{cursor:default;opacity:.9;border-color:rgba(168,224,99,.5)}
+  .f-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .f-ic svg{width:24px;height:24px}
+  .yt .f-ic{background:rgba(255,0,50,.14)}
+  .ig .f-ic{background:rgba(225,48,108,.14)}
+  .f-meta{flex:1;min-width:0}
+  .f-meta b{display:block;font-size:15px;color:var(--text)}
+  .f-meta span{display:block;font-size:12.5px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .f-state{flex:none;font-size:12.5px;font-weight:700;color:var(--dim);display:flex;align-items:center;gap:6px}
+  .f-state.done{color:var(--accent)}
+  .progress{height:6px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin:8px 0 18px}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7cc243,var(--accent));border-radius:99px;transition:width .35s ease}
+  .unlock-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;opacity:.38;pointer-events:none;filter:grayscale(.4)}
+  .unlock-btn.ready{opacity:1;pointer-events:auto;filter:none}
+  .m-note{font-size:11.5px;color:var(--dim);margin-top:14px;line-height:1.6}
+  .m-note a{color:var(--accent2)}
+  .unlock-btn.done{background:transparent;border:1px solid var(--accent);color:var(--accent);box-shadow:none}
+
   @media (max-width:900px){
     .layout{display:block}
     .col-text{padding:110px 24px 20px}
@@ -130,11 +167,11 @@
     The node tree ships untouched — <b>every node, value and link byte-identical</b> to the source file.</p>
 
     <div class="cta" id="download">
-      <a class="btn" href="assets/tut_bend_effect.zip" download>
+      <button class="btn" id="gate-open">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
         Download Addon
-      </a>
-      <div class="meta"><b>133 KB</b> · v1.0 · Blender <b>5.2+</b><br>GPL-3.0 · tested link-for-link</div>
+      </button>
+      <div class="meta"><b>133 KB</b> · v1.0 · Blender <b>5.2+</b><br>GPL-3.0 · tested link-for-link<br>unlocks with a follow on YT + IG</div>
     </div>
 
     <section class="blocks" id="features">
@@ -168,6 +205,119 @@
     <div>License: GPL-3.0-or-later</div>
   </div>
 </footer>
+
+<div class="modal" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+  <div class="modal-back" data-close></div>
+  <div class="modal-card">
+    <button class="x-btn" data-close aria-label="Close">×</button>
+    <h3 id="gate-title">Support the maker</h3>
+    <p class="m-lead">The addon is free — it just takes a follow on my channels. Open both, hit <b>Follow</b> there, come back and confirm.</p>
+
+    <button class="f-card yt" id="card-yt" data-url="https://www.youtube.com/@arsalanasghary-mg2uo">
+      <div class="f-ic"><svg viewBox="0 0 24 24" fill="#ff3d5a"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.4.6A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.6 9.4.6 9.4.6s7.6 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.6 15.6V8.4L15.8 12l-6.2 3.6z"/></svg></div>
+      <div class="f-meta"><b>YouTube</b><span>@arsalanasghary-mg2uo</span></div>
+      <span class="f-state" id="st-yt">Follow →</span>
+    </button>
+
+    <button class="f-card ig" id="card-ig" data-url="https://www.instagram.com/arsalanasghary8?stkn=MzdjeHZ1OGVqazdv">
+      <div class="f-ic"><svg viewBox="0 0 24 24" fill="#e1306c"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.6 4.8-4.9 4.9-1.3.1-1.6.1-4.9.1-3.2 0-3.6 0-4.8-.1-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8C2.4 4 3.9 2.4 7.1 2.3 8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.2 4.4 2.6 6.8 7 7 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.2-4.4-2.6-6.8-7-7C15.7 0 15.3 0 12 0zm0 5.8A6.2 6.2 0 1 0 12 18.2 6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.9 1.4 1.4 0 0 0 0-2.9z"/></svg></div>
+      <div class="f-meta"><b>Instagram</b><span>@arsalanasghary8</span></div>
+      <span class="f-state" id="st-ig">Follow →</span>
+    </button>
+
+    <div class="progress"><i id="prog"></i></div>
+    <a class="btn unlock-btn" id="unlock" href="assets/tut_bend_effect.zip" download tabindex="-1" aria-disabled="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
+      <span id="unlock-label">Unlock download</span>
+    </a>
+    <p class="m-note" id="gate-note">Step 1 — open a channel and follow it. Step 2 — press its card again here to confirm.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY = "tutbend_gate_v1";
+  var modal = document.getElementById("gate");
+  var unlock = document.getElementById("unlock");
+  var unlockLabel = document.getElementById("unlock-label");
+  var prog = document.getElementById("prog");
+  var note = document.getElementById("gate-note");
+  var cards = {
+    yt: { el: document.getElementById("card-yt"), st: document.getElementById("st-yt"), opened: false, done: false },
+    ig: { el: document.getElementById("card-ig"), st: document.getElementById("st-ig"), opened: false, done: false }
+  };
+
+  function save(){
+    var s = { yt: cards.yt.done, ig: cards.ig.done };
+    try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  function load(){
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (s) { cards.yt.done = !!s.yt; cards.ig.done = !!s.ig; }
+    } catch (e) {}
+  }
+
+  function render(){
+    ["yt", "ig"].forEach(function(k){
+      var c = cards[k];
+      if (c.done) { c.el.disabled = true; c.st.textContent = "Followed ✓"; c.st.classList.add("done"); }
+      else if (c.opened) { c.st.textContent = "Confirm ✓"; c.st.classList.add("done"); }
+      else { c.st.textContent = "Follow →"; c.st.classList.remove("done"); }
+    });
+    var n = (cards.yt.done ? 1 : 0) + (cards.ig.done ? 1 : 0);
+    prog.style.width = (n * 50) + "%";
+    if (n === 2) {
+      unlock.classList.add("ready");
+      unlock.removeAttribute("tabindex");
+      unlock.setAttribute("aria-disabled", "false");
+      unlockLabel.textContent = "Download tut_bend_effect.zip";
+      note.textContent = "You're good to go — thanks for the support!";
+    } else {
+      unlock.classList.remove("ready");
+      unlock.setAttribute("tabindex", "-1");
+      unlock.setAttribute("aria-disabled", "true");
+      unlockLabel.textContent = "Unlock download (" + n + "/2)";
+    }
+  }
+
+  ["yt", "ig"].forEach(function(k){
+    var c = cards[k];
+    c.el.addEventListener("click", function(){
+      if (c.done) return;
+      if (!c.opened) {
+        c.opened = true;
+        window.open(c.el.getAttribute("data-url"), "_blank", "noopener");
+        note.textContent = "Follow on the tab that just opened, then press the card again to confirm.";
+      } else {
+        c.done = true;
+        save();
+      }
+      render();
+    });
+  });
+
+  function openModal(){ modal.classList.add("open"); }
+  function closeModal(){ modal.classList.remove("open"); }
+
+  document.getElementById("gate-open").addEventListener("click", function(){
+    if (cards.yt.done && cards.ig.done) {
+      location.href = "assets/tut_bend_effect.zip";
+    } else {
+      openModal();
+    }
+  });
+  modal.addEventListener("click", function(e){
+    if (e.target.hasAttribute("data-close")) closeModal();
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape") closeModal();
+  });
+  unlock.addEventListener("click", function(){ if (unlock.classList.contains("ready")) closeModal(); });
+
+  load(); render();
+})();
+</script>
 
 </body>
 </html>
