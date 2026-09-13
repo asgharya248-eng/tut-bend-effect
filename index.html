@@ -1,19 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tut Bend Effect — Geometry Nodes Addon for Blender</title>
-<meta name="description" content="Bend VFX built with Geometry Nodes, packaged as a one-click installable Blender addon.">
+<meta name="description" content="Bend VFX built with Geometry Nodes, packaged as a one-click installable Blender addon. Scroll to scrub the live effect.">
 <style>
   :root{
-    --accent:#ff7a1a;
-    --accent2:#ffb347;
-    --bg:#07080c;
-    --card:rgba(15,17,24,.62);
-    --stroke:rgba(255,255,255,.09);
-    --text:#eef1f6;
-    --dim:#9aa3b2;
+    --accent:#a8e063;
+    --accent2:#d9f27b;
+    --gold:#e6dd9b;
+    --bg:#060d07;
+    --panel:rgba(10,22,12,.66);
+    --stroke:rgba(168,224,99,.16);
+    --text:#eef6e6;
+    --dim:#93a88c;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html{scroll-behavior:smooth}
@@ -22,150 +23,221 @@
     color:var(--text);
     font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     overflow-x:hidden;
-    min-height:100vh;
   }
-  .bg{
+
+  /* fixed vertical video, scrubbed by scroll */
+  .video-stage{
     position:fixed;inset:0;z-index:-2;
     display:flex;align-items:center;justify-content:center;
-    background:
-      radial-gradient(1200px 700px at 70% 20%, #17203a 0%, transparent 60%),
-      radial-gradient(900px 600px at 15% 85%, #251421 0%, transparent 55%),
-      var(--bg);
+    background:radial-gradient(1100px 720px at 50% 35%, #0e1f10 0%, var(--bg) 70%);
   }
-  .bg img{
-    width:min(92vw,1100px);
-    height:auto;
-    opacity:.9;
-    filter:saturate(1.15) contrast(1.05);
-    mask-image:radial-gradient(closest-side at 50% 45%, #000 62%, transparent 100%);
-    -webkit-mask-image:radial-gradient(closest-side at 50% 45%, #000 62%, transparent 100%);
+  .video-stage video{
+    height:100%;width:auto;max-width:72vw;object-fit:contain;
+    opacity:.92;
+    filter:saturate(1.1);
+    mask-image:linear-gradient(180deg,transparent 0%,#000 12%,#000 88%,transparent 100%);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 12%,#000 88%,transparent 100%);
   }
-  .veil{position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,8,12,.15) 0%,rgba(7,8,12,.55) 55%,rgba(7,8,12,.94) 100%)}
+  .veil{position:fixed;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(6,13,7,.92) 0%,rgba(6,13,7,.55) 45%,rgba(6,13,7,.2) 70%,rgba(6,13,7,.55) 100%)}
 
-  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
 
-  header{padding:22px 0;display:flex;justify-content:space-between;align-items:center}
+  header{position:fixed;top:0;left:0;right:0;z-index:10;padding:18px 0}
+  header .bar{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center}
   .logo{font-weight:800;letter-spacing:.4px;font-size:18px}
   .logo b{color:var(--accent)}
   nav a{color:var(--dim);text-decoration:none;margin-left:26px;font-size:14px}
   nav a:hover{color:var(--text)}
+  .glass{background:rgba(6,13,7,.5);backdrop-filter:blur(14px);border-bottom:1px solid var(--stroke)}
 
-  .hero{min-height:78vh;display:flex;flex-direction:column;justify-content:center;padding-bottom:6vh}
+  main{position:relative}
+  .scene{min-height:100vh;display:flex;align-items:center}
+  .panel{
+    background:var(--panel);backdrop-filter:blur(16px);
+    border:1px solid var(--stroke);border-radius:24px;
+    padding:clamp(28px,4vw,52px);
+    max-width:560px;
+    box-shadow:0 24px 80px -24px rgba(0,0,0,.8);
+  }
+  .scene:nth-child(odd) .panel{margin-right:auto}
+  .scene:nth-child(even) .panel{margin-left:auto}
+
   .chip{
-    align-self:flex-start;display:inline-flex;gap:8px;align-items:center;
-    border:1px solid var(--stroke);background:var(--card);backdrop-filter:blur(10px);
-    padding:7px 14px;border-radius:999px;font-size:12.5px;color:var(--dim);margin-bottom:22px;
+    display:inline-flex;gap:8px;align-items:center;
+    border:1px solid var(--stroke);
+    padding:6px 13px;border-radius:999px;font-size:12px;color:var(--dim);margin-bottom:20px;
   }
-  .chip i{width:8px;height:8px;border-radius:50%;background:#3ddc84;box-shadow:0 0 10px #3ddc84;animation:pulse 1.6s infinite}
-  @keyframes pulse{50%{opacity:.35}}
-  h1{font-size:clamp(42px,7vw,76px);font-weight:900;line-height:1.04;letter-spacing:-1.5px}
+  .chip i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+
+  h1{font-size:clamp(40px,6.4vw,68px);font-weight:900;line-height:1.03;letter-spacing:-1.6px}
   h1 span{background:linear-gradient(92deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .sub{margin-top:20px;max-width:640px;color:var(--dim);font-size:clamp(15px,1.6vw,18px);line-height:1.7}
-  .fa{direction:rtl;text-align:right;font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif}
+  h2{font-size:clamp(24px,3.4vw,36px);font-weight:900;letter-spacing:-.6px;margin-bottom:12px}
+  h2 em{font-style:normal;color:var(--accent)}
+  .sub{margin-top:18px;color:var(--dim);font-size:clamp(15px,1.6vw,17px);line-height:1.75}
+  .sub b{color:var(--text)}
+  p.lead{color:var(--dim);line-height:1.7;margin-bottom:26px}
 
-  .cta{margin-top:36px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  .cta{margin-top:32px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
   .btn{
-    display:inline-flex;align-items:center;gap:12px;text-decoration:none;
-    background:linear-gradient(92deg,var(--accent),#ff5e00);
-    color:#fff;font-weight:800;font-size:16.5px;
-    padding:16px 30px;border-radius:14px;
-    box-shadow:0 12px 40px -12px rgba(255,110,26,.55);
-    transition:transform .15s ease,box-shadow .15s ease;
+    display:inline-flex;align-items:center;gap:11px;text-decoration:none;
+    background:linear-gradient(92deg,#7cc243,var(--accent));
+    color:#08140a;font-weight:800;font-size:16px;
+    padding:15px 28px;border-radius:14px;
+    box-shadow:0 12px 40px -12px rgba(140,210,80,.5);
+    transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;
   }
-  .btn:hover{transform:translateY(-2px);box-shadow:0 18px 50px -12px rgba(255,110,26,.7)}
-  .btn svg{width:20px;height:20px}
-  .meta{color:var(--dim);font-size:13px}
-  .meta b{color:var(--text)}
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.07);box-shadow:0 18px 50px -12px rgba(140,210,80,.68)}
+  .btn svg{width:19px;height:19px}
+  .meta{color:var(--dim);font-size:13px;line-height:1.6}
+  .meta b{color:var(--gold)}
 
-  section{padding:84px 0}
-  h2{font-size:clamp(24px,3.4vw,36px);font-weight:900;letter-spacing:-.6px;margin-bottom:10px}
-  .lead{color:var(--dim);max-width:620px;line-height:1.7;margin-bottom:40px}
+  .scroll-hint{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:9;color:var(--dim);font-size:12px;letter-spacing:2px;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:8px;transition:opacity .4s}
+  .scroll-hint::after{content:"";width:1px;height:34px;background:linear-gradient(var(--accent),transparent);animation:drop 1.6s infinite}
+  @keyframes drop{0%{transform:scaleY(0);transform-origin:top}45%{transform:scaleY(1);transform-origin:top}55%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
-  .card{
-    background:var(--card);border:1px solid var(--stroke);border-radius:18px;
-    padding:26px;backdrop-filter:blur(12px);
-    transition:border-color .2s ease,transform .2s ease;
-  }
-  .card:hover{border-color:rgba(255,122,26,.5);transform:translateY(-3px)}
-  .card .ico{font-size:26px;margin-bottom:14px}
-  .card h3{font-size:16.5px;margin-bottom:8px;font-weight:800}
-  .card p{color:var(--dim);font-size:14px;line-height:1.65}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .feat{border:1px solid var(--stroke);border-radius:14px;padding:16px 18px;background:rgba(255,255,255,.03)}
+  .feat h3{font-size:14.5px;margin-bottom:5px;display:flex;gap:8px;align-items:center}
+  .feat p{color:var(--dim);font-size:13px;line-height:1.6}
+  code{background:rgba(168,224,99,.12);border:1px solid var(--stroke);padding:1px 7px;border-radius:6px;font-size:12.5px;color:var(--accent2)}
 
-  ol.steps{counter-reset:s;list-style:none;display:grid;gap:14px;max-width:720px}
-  ol.steps li{
-    counter-increment:s;position:relative;padding:18px 20px 18px 66px;
-    background:var(--card);border:1px solid var(--stroke);border-radius:14px;
-    color:var(--dim);line-height:1.6;font-size:15px;
-  }
-  ol.steps li::before{
-    content:counter(s);position:absolute;left:18px;top:50%;transform:translateY(-50%);
-    width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
-    background:linear-gradient(135deg,var(--accent),#ff5e00);color:#fff;font-weight:800;font-size:14px;
-  }
+  ol.steps{list-style:none;display:grid;gap:12px;counter-reset:s}
+  ol.steps li{counter-increment:s;position:relative;padding:14px 16px 14px 56px;border:1px solid var(--stroke);border-radius:12px;color:var(--dim);line-height:1.6;font-size:14.5px}
+  ol.steps li::before{content:counter(s);position:absolute;left:14px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#7cc243,var(--accent));color:#08140a;font-weight:800;font-size:13px}
   ol.steps b{color:var(--text)}
-  code{background:rgba(255,255,255,.07);border:1px solid var(--stroke);padding:2px 8px;border-radius:6px;font-size:13px;color:var(--accent2)}
 
-  footer{border-top:1px solid var(--stroke);padding:30px 0 40px;color:var(--dim);font-size:13px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  footer a{color:var(--dim)}
+  footer{border-top:1px solid var(--stroke);padding:26px 0 36px;color:var(--dim);font-size:13px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(6,13,7,.72)}
+
+  .nofx{max-width:520px;position:fixed;inset:0;margin:auto;z-index:20;background:var(--panel);border:1px solid var(--stroke);border-radius:18px;padding:30px;display:none}
+  @media (max-width:760px){
+    .video-stage video{max-width:100vw;opacity:.4}
+    .scene:nth-child(even) .panel,.scene:nth-child(odd) .panel{margin:0 auto}
+    .scene{padding:14vh 0}
+    .grid{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
 
-<div class="bg"><img src="assets/bg.webp" alt="Tut Bend Effect spinning preview — the exact geometry nodes result"></div>
+<div class="video-stage"><video id="scrub" src="assets/bend_scroll.mp4" muted playsinline preload="auto" poster="assets/poster.jpg"></video></div>
 <div class="veil"></div>
 
-<div class="wrap">
-  <header>
+<header class="glass">
+  <div class="bar">
     <div class="logo"><b>Tut</b>Bend</div>
     <nav>
       <a href="#features">Features</a>
       <a href="#install">Install</a>
       <a href="#download">Download</a>
     </nav>
-  </header>
-
-  <div class="hero" id="download">
-    <div class="chip"><i></i> LIVE PREVIEW — the spinning object in this background IS the effect</div>
-    <h1>Tut Bend<br><span>Effect</span></h1>
-    <p class="sub">A bend / wave VFX built entirely with <b>Geometry Nodes</b>, packaged as a one-click Blender addon.
-    The node tree is shipped untouched — every node, value and link identical to the original file.
-    <br><span class="fa">یک افکت خم‌شدگی با جیومتری‌نودز، بدون حتی یک تغییر در اتصال نودها — نصب تک‌کلیکی.</span></p>
-    <div class="cta">
-      <a class="btn" href="assets/tut_bend_effect.zip" download>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
-        Download Addon
-      </a>
-      <div class="meta"><b>132 KB</b> · v1.0 · Blender <b>5.2+</b> · GPL-3.0</div>
-    </div>
   </div>
+</header>
 
-  <section id="features">
-    <h2>What you get</h2>
-    <p class="lead">Drop the modifier on any object and drive the bend from the N-panel.</p>
-    <div class="grid">
-      <div class="card"><div class="ico">🧬</div><h3>Real Geometry Nodes</h3><p>The full 174-node tree (root + nested group) ships as an embedded asset — pixel-identical links, zero hand-rebuilding.</p></div>
-      <div class="card"><div class="ico">🎛️</div><h3>Tweakable Inputs</h3><p><code>radius</code>, <code>rang</code>, <code>var</code>, <code>Count</code>, <code>Z</code> and a switchable reference path exposed straight on the modifier.</p></div>
-      <div class="card"><div class="ico">🧭</div><h3>Sidebar Panel</h3><p>View3D → Sidebar → <b>Tut Bend</b>: one button to add the effect, one to open the original node editor.</p></div>
-      <div class="card"><div class="ico">📦</div><h3>Self-contained</h3><p>Node groups and the Nurbs reference path are auto-appended on first use — nothing to import manually.</p></div>
+<div class="scroll-hint" id="hint">Scroll to bend</div>
+
+<main>
+  <section class="scene" id="download">
+    <div class="wrap">
+      <div class="panel">
+        <div class="chip"><i></i> The background is the live effect — scroll to scrub it</div>
+        <h1>Tut Bend<br><span>Effect</span></h1>
+        <p class="sub">A bend &amp; whip VFX built entirely with <b>Geometry Nodes</b>, packaged as a one-click Blender addon.
+        The node tree ships untouched — <b>every node, value and link byte-identical</b> to the source file.</p>
+        <div class="cta">
+          <a class="btn" href="assets/tut_bend_effect.zip" download>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
+            Download Addon
+          </a>
+          <div class="meta"><b>133 KB</b> · v1.0 · Blender <b>5.2+</b><br>GPL-3.0 · tested link-for-link</div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section id="install">
-    <h2>Install</h2>
-    <p class="lead">Works in Blender 5.2 LTS (legacy addon mode) and classic install path.</p>
-    <ol class="steps">
-      <li>Download <b>tut_bend_effect.zip</b> with the button above.</li>
-      <li>Open <b>Edit → Preferences → Get Extensions</b>, click <b>⌄ → Install from Disk</b> and pick the zip. <span class="fa">از منوی کشویی «Install from Disk» فایل زیپ را انتخاب کن.</span></li>
-      <li>Select an object, open the <b>Tut Bend</b> tab in the sidebar and press <b>Add Tut Bend Effect</b>. Done.</li>
-    </ol>
+  <section class="scene" id="features">
+    <div class="wrap">
+      <div class="panel">
+        <h2>What you <em>get</em></h2>
+        <div class="grid">
+          <div class="feat"><h3>🧬 Real GN tree</h3><p>Full 174-node setup (root + nested group) embedded as an asset — links never rebuilt by hand.</p></div>
+          <div class="feat"><h3>🎛️ Live inputs</h3><p><code>radius</code>, <code>rang</code>, <code>var</code>, <code>Count</code>, <code>Z</code> exposed straight on the modifier.</p></div>
+          <div class="feat"><h3>🧭 Sidebar panel</h3><p>View3D → Sidebar → <b>Tut Bend</b>: add the effect or open the original node editor in one click.</p></div>
+          <div class="feat"><h3>📦 Self-contained</h3><p>Node groups + reference path auto-append on first use. Nothing to import.</p></div>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <footer>
+  <section class="scene" id="install">
+    <div class="wrap">
+      <div class="panel">
+        <h2>Install in <em>3 steps</em></h2>
+        <ol class="steps">
+          <li>Download <b>tut_bend_effect.zip</b> with the button above.</li>
+          <li><b>Edit → Preferences → Get Extensions → ⌄ → Install from Disk</b> and pick the zip, then enable <b>Tut Bend Effect</b>.</li>
+          <li>Select any object, open the <b>Tut Bend</b> sidebar tab and press <b>Add Tut Bend Effect</b>.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;width:100%;flex-wrap:wrap;gap:8px">
     <div>Made with Geometry Nodes · packaged with care</div>
     <div>License: GPL-3.0-or-later</div>
-  </footer>
-</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var v = document.getElementById("scrub");
+  var hint = document.getElementById("hint");
+  var canScrollAnim = CSS.supports("animation-timeline", "scroll()") && "ScrollTimeline" in window;
+  var wired = false;
+
+  function progress(){
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    return max > 0 ? Math.min(Math.max(window.scrollY / max, 0), 1) : 0;
+  }
+
+  function jsScrub(){
+    if (wired) return; wired = true;
+    var ticking = false;
+    window.addEventListener("scroll", function(){
+      if (!ticking) {
+        requestAnimationFrame(function(){
+          v.currentTime = progress() * Math.max(v.duration - 0.05, 0);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, {passive:true});
+  }
+
+  function waapiScrub(){
+    if (wired) return; wired = true;
+    var anim = v.animate(
+      [{ currentTime: 0 }, { currentTime: v.duration - 0.05 }],
+      { fill: "both", duration: 1000 }
+    );
+    anim.timeline = new ScrollTimeline({ source: document.scrollingElement, axis: "block" });
+  }
+
+  function setup(){
+    v.pause();
+    if (canScrollAnim) { waapiScrub(); }
+    else { jsScrub(); v.currentTime = progress() * Math.max(v.duration - 0.05, 0); }
+  }
+  if (v.readyState >= 1 && v.duration > 0) setup();
+  else v.addEventListener("loadedmetadata", setup);
+
+  window.addEventListener("scroll", function(){
+    hint.style.opacity = window.scrollY > 80 ? "0" : "1";
+  }, {passive:true});
+})();
+</script>
 
 </body>
 </html>
