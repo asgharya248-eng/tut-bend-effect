@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tut Bend Effect — Blender Geometry Nodes Addon</title>
+<meta name="description" content="Bend VFX built with Geometry Nodes. Scroll to reveal the site behind the effect, grab the addon at the end.">
+<style>
+  :root{
+    --accent:#a8e063;
+    --accent2:#d9f27b;
+    --gold:#e6dd9b;
+    --bg:#060d07;
+    --stroke:rgba(168,224,99,.18);
+    --text:#eef6e6;
+    --dim:#a8bba0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    overflow-x:hidden;
+  }
+
+  /* ---------- site content (BEHIND the video) ---------- */
+  .site{position:relative;z-index:1}
+  .stage{min-height:100vh;display:flex;align-items:center}
+  .col{width:min(41vw,520px);padding:90px 0 90px clamp(20px,4vw,72px)}
+
+  .glass{
+    background:rgba(8,18,10,.72);
+    border:1px solid var(--stroke);
+    border-radius:20px;
+    backdrop-filter:blur(10px);
+    padding:clamp(22px,2.4vw,34px);
+  }
+
+  .chip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--stroke);padding:6px 13px;border-radius:999px;font-size:12px;color:var(--dim);margin-bottom:18px}
+  .chip i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+
+  h1{font-size:clamp(38px,4.6vw,60px);font-weight:900;line-height:1.04;letter-spacing:-1.4px}
+  h1 span{background:linear-gradient(92deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-size:clamp(22px,2.6vw,32px);font-weight:900;letter-spacing:-.5px;margin-bottom:10px}
+  h2 em{font-style:normal;color:var(--accent)}
+  .sub{margin-top:16px;color:var(--dim);font-size:clamp(14px,1.3vw,16.5px);line-height:1.75}
+  .sub b{color:var(--text)}
+  code{background:rgba(168,224,99,.12);border:1px solid var(--stroke);padding:1px 7px;border-radius:6px;font-size:12.5px;color:var(--accent2)}
+
+  .hint{margin-top:26px;display:flex;align-items:center;gap:10px;color:var(--dim);font-size:12.5px;letter-spacing:1.8px;text-transform:uppercase}
+  .hint .ar{width:22px;height:22px;border:1px solid var(--stroke);border-radius:999px;display:grid;place-items:center;animation:bob 1.5s infinite}
+  @keyframes bob{50%{transform:translateY(5px)}}
+
+  .feat{border:1px solid var(--stroke);border-radius:14px;padding:13px 16px;background:rgba(255,255,255,.03);margin-bottom:10px}
+  .feat h3{font-size:14.5px;margin-bottom:4px}
+  .feat h3 i{font-style:normal;margin-right:6px}
+  .feat p{color:var(--dim);font-size:13px;line-height:1.6}
+
+  ol.steps{list-style:none;display:grid;gap:10px;counter-reset:s}
+  ol.steps li{counter-increment:s;position:relative;padding:12px 14px 12px 52px;border:1px solid var(--stroke);border-radius:12px;color:var(--dim);line-height:1.55;font-size:14px;background:rgba(8,18,10,.5)}
+  ol.steps li::before{content:counter(s);position:absolute;left:12px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,#7cc243,var(--accent));color:#08140a;font-weight:800;font-size:12px}
+  ol.steps b{color:var(--text)}
+
+  /* ---------- final: four plans ---------- */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .plan{
+    position:relative;overflow:hidden;
+    border:1px solid var(--stroke);border-radius:16px;
+    background:linear-gradient(180deg,rgba(14,29,16,.94),rgba(10,21,11,.94));
+    padding:18px 16px 16px;
+    transform:perspective(900px) rotateY(18deg) scale(.92);
+    opacity:0;filter:blur(3px);
+    transition:transform .7s cubic-bezier(.2,.9,.25,1.2),opacity .6s ease,filter .6s ease,border-color .2s;
+  }
+  .plans.open .plan{transform:perspective(900px) rotateY(0) scale(1);opacity:1;filter:none}
+  .plans.open .plan:nth-child(2){transition-delay:.08s}
+  .plans.open .plan:nth-child(3){transition-delay:.16s}
+  .plans.open .plan:nth-child(4){transition-delay:.24s}
+  .plan:hover{border-color:rgba(168,224,99,.55)}
+  .plan h4{font-size:15px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+  .plan h4 b{color:var(--accent);font-size:12px;border:1px solid var(--stroke);padding:2px 9px;border-radius:999px}
+  .plan ul{list-style:none;margin:12px 0 14px;display:grid;gap:6px}
+  .plan ul li{color:var(--dim);font-size:12.5px;display:flex;gap:7px;align-items:baseline}
+  .plan ul li::before{content:"✓";color:var(--accent);font-weight:900;font-size:12px}
+  .dl{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    text-decoration:none;font-weight:800;font-size:13px;
+    background:linear-gradient(92deg,#7cc243,var(--accent));color:#08140a;
+    padding:10px 12px;border-radius:10px;border:0;width:100%;cursor:pointer;font-family:inherit;
+    transition:filter .15s,transform .15s;
+  }
+  .dl:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .dl svg{width:15px;height:15px}
+  .end-note{margin-top:14px;color:var(--dim);font-size:12px;text-align:center}
+
+  /* ---------- video layer (FRONT) ---------- */
+  .video-layer{
+    position:fixed;inset:0;z-index:5;pointer-events:none;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .video-layer video{width:100vw;height:100vh;object-fit:cover}
+
+  /* ---------- header above everything ---------- */
+  header{position:fixed;top:0;left:0;right:0;z-index:20;background:rgba(6,13,7,.55);backdrop-filter:blur(14px);border-bottom:1px solid var(--stroke);padding:14px 0}
+  header .bar{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center}
+  .logo{font-weight:800;letter-spacing:.4px;font-size:17px}
+  .logo b{color:var(--accent)}
+  nav a{color:var(--dim);text-decoration:none;margin-left:22px;font-size:13.5px}
+  nav a:hover{color:var(--text)}
+
+  footer{position:relative;z-index:1;border-top:1px solid var(--stroke);padding:22px 0 30px;color:var(--dim);font-size:12.5px;background:rgba(6,13,7,.85)}
+  footer .fbar{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+  /* ---------- follow-gate modal ---------- */
+  .modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:24px}
+  .modal.open{display:flex}
+  .modal-back{position:absolute;inset:0;background:rgba(3,7,4,.8);backdrop-filter:blur(6px)}
+  .modal-card{position:relative;width:min(500px,100%);background:linear-gradient(180deg,#0e1d10,#0a150b);border:1px solid var(--stroke);border-radius:22px;padding:30px 26px 24px;box-shadow:0 40px 120px -30px rgba(0,0,0,.9);animation:pop .25s ease}
+  @keyframes pop{from{transform:translateY(14px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+  .modal-card h3{font-size:20px;font-weight:900}
+  .m-lead{color:var(--dim);font-size:13.5px;line-height:1.7;margin:6px 0 18px}
+  .x-btn{position:absolute;top:12px;right:14px;background:none;border:0;color:var(--dim);font-size:22px;cursor:pointer;padding:4px 8px}
+  .x-btn:hover{color:var(--text)}
+  .f-card{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:12px 14px;margin-bottom:10px;border-radius:13px;border:1px solid var(--stroke);background:rgba(255,255,255,.03);cursor:pointer;transition:border-color .15s;font-family:inherit;color:inherit}
+  .f-card:hover{border-color:rgba(168,224,99,.45)}
+  .f-card:disabled{border-color:rgba(168,224,99,.5)}
+  .f-ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:none}
+  .f-ic svg{width:22px;height:22px}
+  .yt .f-ic{background:rgba(255,0,50,.14)}
+  .ig .f-ic{background:rgba(225,48,108,.14)}
+  .f-meta{flex:1;min-width:0}
+  .f-meta b{display:block;font-size:14.5px}
+  .f-meta span{display:block;font-size:12px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .f-state{flex:none;font-size:12.5px;font-weight:700;color:var(--dim)}
+  .f-state.done{color:var(--accent)}
+  .progress{height:6px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin:6px 0 16px}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7cc243,var(--accent));transition:width .35s ease}
+  .unlock-btn{display:none;width:100%;align-items:center;justify-content:center;gap:9px;background:linear-gradient(92deg,#7cc243,var(--accent));color:#08140a;font-weight:800;font-size:15px;padding:14px;border-radius:13px;border:0;cursor:pointer;font-family:inherit}
+  .unlock-btn.ready{display:flex}
+  .m-note{font-size:11.5px;color:var(--dim);margin-top:12px;line-height:1.6}
+
+  @media (max-width:900px){
+    .col{width:auto;flex:1;padding:110px 18px 60px;margin:0 auto;max-width:640px}
+    .stage{min-height:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="video-layer" id="vlayer">
+  <video id="scrub" src="assets/bend_alpha.webm" muted playsinline preload="auto" poster="assets/poster.jpg"></video>
+</div>
+
+<header>
+  <div class="bar">
+    <div class="logo"><b>Tut</b>Bend</div>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#plans">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main class="site">
+
+  <section class="stage">
+    <div class="col">
+      <div class="glass">
+        <div class="chip"><i></i> Scroll — the effect peels away and the site shows through</div>
+        <h1>Tut Bend<br><span>Effect</span></h1>
+        <p class="sub">A bend &amp; whip VFX built entirely with <b>Geometry Nodes</b>, packaged as a one-click Blender addon.
+        The node tree ships untouched — <b>every node, value and link byte-identical</b> to the source file.</p>
+        <div class="hint"><span class="ar">↓</span> keep scrolling</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage" id="features">
+    <div class="col">
+      <div class="glass">
+        <h2>What you <em>get</em></h2>
+        <div class="feat"><h3><i>🧬</i>Real GN tree</h3><p>Full 174-node setup (root + nested group) embedded as an asset — links never rebuilt by hand.</p></div>
+        <div class="feat"><h3><i>🎛️</i>Live inputs</h3><p><code>radius</code>, <code>rang</code>, <code>var</code>, <code>Count</code>, <code>Z</code> exposed straight on the modifier.</p></div>
+        <div class="feat"><h3><i>🧭</i>Sidebar panel</h3><p>View3D → Sidebar → <b>Tut Bend</b>: add the effect or open the original node editor.</p></div>
+        <div class="feat"><h3><i>📦</i>Self-contained</h3><p>Node groups + reference path auto-append on first use.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage" id="install">
+    <div class="col">
+      <div class="glass">
+        <h2>Install in <em>3 steps</em></h2>
+        <ol class="steps">
+          <li>Grab <b>tut_bend_effect.zip</b> below.</li>
+          <li><b>Edit → Preferences → Get Extensions → ⌄ → Install from Disk</b>, enable it.</li>
+          <li>Select an object → sidebar tab <b>Tut Bend</b> → <b>Add Effect</b>.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage" id="plans">
+    <div class="col">
+      <div class="glass">
+        <h2>Four ways to <em>use it</em></h2>
+        <div class="plans" id="plans-grid">
+          <div class="plan">
+            <h4>Solo <b>FREE</b></h4>
+            <ul><li>Full node tree</li><li>Personal projects</li></ul>
+            <button class="dl" data-gate>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
+              Download .zip
+            </button>
+          </div>
+          <div class="plan">
+            <h4>Studio <b>FREE</b></h4>
+            <ul><li>Commercial use</li><li>Client work</li></ul>
+            <button class="dl" data-gate>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
+              Download .zip
+            </button>
+          </div>
+          <div class="plan">
+            <h4>Education <b>FREE</b></h4>
+            <ul><li>Teaching &amp; courses</li><li>Tutorials</li></ul>
+            <button class="dl" data-gate>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
+              Download .zip
+            </button>
+          </div>
+          <div class="plan">
+            <h4>Open Source <b>GPL-3</b></h4>
+            <ul><li>Modify &amp; share</li><li>Keep it free forever</li></ul>
+            <button class="dl" data-gate>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
+              Download .zip
+            </button>
+          </div>
+        </div>
+        <p class="end-note">133 KB · v1.0 · Blender 5.2+ · unlocking takes a follow on YT + IG</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="fbar">
+    <div>Made with Geometry Nodes · packaged with care</div>
+    <div>License: GPL-3.0-or-later</div>
+  </div>
+</footer>
+
+<div class="modal" id="gate" role="dialog" aria-modal="true">
+  <div class="modal-back" data-close></div>
+  <div class="modal-card">
+    <button class="x-btn" data-close aria-label="Close">×</button>
+    <h3>Support the maker</h3>
+    <p class="m-lead">The addon is free — it just takes a follow on my channels. Open both, hit <b>Follow</b> there, come back and confirm.</p>
+    <button class="f-card yt" id="card-yt" data-url="https://www.youtube.com/@arsalanasghary-mg2uo">
+      <div class="f-ic"><svg viewBox="0 0 24 24" fill="#ff3d5a"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.5 12 3.5 12 3.5s-7.6 0-9.4.6A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.6 9.4.6 9.4.6s7.6 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.6 15.6V8.4L15.8 12l-6.2 3.6z"/></svg></div>
+      <div class="f-meta"><b>YouTube</b><span>@arsalanasghary-mg2uo</span></div>
+      <span class="f-state" id="st-yt">Follow →</span>
+    </button>
+    <button class="f-card ig" id="card-ig" data-url="https://www.instagram.com/arsalanasghary8?stkn=MzdjeHZ1OGVqazdv">
+      <div class="f-ic"><svg viewBox="0 0 24 24" fill="#e1306c"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 3.2-1.6 4.8-4.9 4.9-1.3.1-1.6.1-4.9.1-3.2 0-3.6 0-4.8-.1-3.3-.1-4.8-1.7-4.9-4.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8C2.4 4 3.9 2.4 7.1 2.3 8.4 2.2 8.8 2.2 12 2.2zM12 0C8.7 0 8.3 0 7.1.1 2.7.3.3 2.7.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.2 4.4 2.6 6.8 7 7 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c4.4-.2 6.8-2.6 7-7 .1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.2-4.4-2.6-6.8-7-7C15.7 0 15.3 0 12 0zm0 5.8A6.2 6.2 0 1 0 12 18.2 6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.9 1.4 1.4 0 0 0 0-2.9z"/></svg></div>
+      <div class="f-meta"><b>Instagram</b><span>@arsalanasghary8</span></div>
+      <span class="f-state" id="st-ig">Follow →</span>
+    </button>
+    <div class="progress"><i id="prog"></i></div>
+    <button class="unlock-btn" id="unlock" download="tut_bend_effect.zip" data-href="assets/tut_bend_effect.zip">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5 4.5M4 21h16"/></svg>
+      Download tut_bend_effect.zip
+    </button>
+    <p class="m-note" id="gate-note">Step 1 — open a channel and follow it. Step 2 — press its card again here to confirm.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ---- scroll-scrubbed video ---- */
+  var v = document.getElementById("scrub");
+  var canScrollAnim = CSS.supports("animation-timeline","scroll()") && "ScrollTimeline" in window;
+  var wired = false;
+
+  function progress(){
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    return max > 0 ? Math.min(Math.max(window.scrollY / max, 0), 1) : 0;
+  }
+  function jsScrub(){
+    if (wired) return; wired = true;
+    var t = false;
+    window.addEventListener("scroll", function(){
+      if (!t) {
+        t = true;
+        requestAnimationFrame(function(){
+          v.currentTime = progress() * Math.max(v.duration - 0.05, 0);
+          t = false;
+        });
+      }
+    }, {passive:true});
+  }
+  function waapiScrub(){
+    if (wired) return; wired = true;
+    var anim = v.animate([{currentTime:0},{currentTime:v.duration - 0.05}], {fill:"both", duration:1000});
+    anim.timeline = new ScrollTimeline({source: document.scrollingElement, axis:"block"});
+  }
+  function setup(){
+    v.pause();
+    if (canScrollAnim) waapiScrub();
+    else { jsScrub(); v.currentTime = progress() * Math.max(v.duration - 0.05, 0); }
+  }
+  if (v.readyState >= 1 && v.duration > 0) setup();
+  else v.addEventListener("loadedmetadata", setup);
+
+  /* ---- open the 4 plans right when the final tear widens (~82% scroll) ---- */
+  var grid = document.getElementById("plans-grid");
+  window.addEventListener("scroll", function(){
+    if (progress() > 0.82) grid.classList.add("open");
+  }, {passive:true});
+
+  /* ---- follow gate ---- */
+  var KEY = "tutbend_gate_v1";
+  var modal = document.getElementById("gate");
+  var unlock = document.getElementById("unlock");
+  var prog = document.getElementById("prog");
+  var note = document.getElementById("gate-note");
+  var cards = {
+    yt:{el:document.getElementById("card-yt"), st:document.getElementById("st-yt"), opened:false, done:false},
+    ig:{el:document.getElementById("card-ig"), st:document.getElementById("st-ig"), opened:false, done:false}
+  };
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify({yt:cards.yt.done, ig:cards.ig.done})); }catch(e){} }
+  function load(){ try{ var s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s){cards.yt.done=!!s.yt; cards.ig.done=!!s.ig;} }catch(e){} }
+  function render(){
+    ["yt","ig"].forEach(function(k){
+      var c=cards[k];
+      if (c.done){ c.el.disabled=true; c.st.textContent="Followed ✓"; c.st.classList.add("done"); }
+      else if (c.opened){ c.st.textContent="Confirm ✓"; c.st.classList.add("done"); }
+      else { c.st.textContent="Follow →"; c.st.classList.remove("done"); }
+    });
+    var n=(cards.yt.done?1:0)+(cards.ig.done?1:0);
+    prog.style.width=(n*50)+"%";
+    unlock.classList.toggle("ready", n===2);
+    if (n===2) note.textContent="You're good to go — thanks for the support!";
+  }
+  ["yt","ig"].forEach(function(k){
+    var c=cards[k];
+    c.el.addEventListener("click", function(){
+      if (c.done) return;
+      if (!c.opened){
+        c.opened=true;
+        window.open(c.el.getAttribute("data-url"),"_blank","noopener");
+        note.textContent="Follow on the tab that just opened, then press the card again to confirm.";
+      } else { c.done=true; save(); }
+      render();
+    });
+  });
+  function openGate(){ modal.classList.add("open"); render(); }
+  function closeGate(){ modal.classList.remove("open"); }
+  document.querySelectorAll("[data-gate]").forEach(function(b){
+    b.addEventListener("click", function(){
+      if (cards.yt.done && cards.ig.done) triggerDl();
+      else openGate();
+    });
+  });
+  function triggerDl(){
+    var a=document.createElement("a");
+    a.href=unlock.getAttribute("data-href"); a.download="tut_bend_effect.zip";
+    document.body.appendChild(a); a.click(); a.remove();
+    closeGate();
+  }
+  unlock.addEventListener("click", triggerDl);
+  modal.addEventListener("click", function(e){ if (e.target.hasAttribute("data-close")) closeGate(); });
+  document.addEventListener("keydown", function(e){ if (e.key==="Escape") closeGate(); });
+  load(); render();
+})();
+</script>
+
+</body>
+</html>
