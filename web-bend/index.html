@@ -293,17 +293,19 @@
   var duration = 0;
   var videoOk = false;
 
-  v.addEventListener("loadedmetadata", function(){
+  function markOk(){
     duration = v.duration;
     if (duration > 0) { videoOk = true; v.pause(); scrub(); }
-  });
+  }
+  v.addEventListener("loadedmetadata", markOk);
   v.addEventListener("error", function(){
     layer.classList.add("video-broken");
     grid.classList.add("open");
     if (hint) hint.classList.add("hide");
   });
+  if (v.readyState >= 1 && v.duration > 0) markOk();
   setTimeout(function(){
-    if (!videoOk) layer.classList.add("video-broken");
+    if (!videoOk) { if (v.readyState >= 1 && v.duration > 0) markOk(); else layer.classList.add("video-broken"); }
   }, 6000);
 
   function progress(){
